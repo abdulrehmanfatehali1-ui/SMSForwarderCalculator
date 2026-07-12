@@ -46,9 +46,14 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnEq).setOnClickListener {
             try {
-                // A very basic dummy implementation for a fake calculator.
-                // Normally you would use a math evaluator library here.
-                tvDisplay.text = "0" 
+                val expr = tvDisplay.text.toString()
+                val result = evaluate(expr)
+                // Remove .0 if it's an integer
+                if (result == result.toLong().toDouble()) {
+                    tvDisplay.text = result.toLong().toString()
+                } else {
+                    tvDisplay.text = result.toString()
+                }
             } catch (e: Exception) {
                 tvDisplay.text = "Error"
             }
@@ -63,5 +68,67 @@ class MainActivity : AppCompatActivity() {
                 SMS_PERMISSION_CODE
             )
         }
+    }
+
+    private fun evaluate(str: String): Double {
+        return object : Any() {
+            var pos = -1
+            var ch = 0
+
+            fun nextChar() {
+                ch = if (++pos < str.length) str[pos].toInt() else -1
+            }
+
+            fun eat(charToEat: Int): Boolean {
+                while (ch == ' '.toInt()) nextChar()
+                if (ch == charToEat) {
+                    nextChar()
+                    return true
+                }
+                return false
+            }
+
+            fun parse(): Double {
+                nextChar()
+                val x = parseExpression()
+                if (pos < str.length) throw RuntimeException("Unexpected: " + ch.toChar())
+                return x
+            }
+
+            fun parseExpression(): Double {
+                var x = parseTerm()
+                while (true) {
+                    if (eat('+'.toInt())) x += parseTerm()
+                    else if (eat('-'.toInt())) x -= parseTerm()
+                    else return x
+                }
+            }
+
+            fun parseTerm(): Double {
+                var x = parseFactor()
+                while (true) {
+                    if (eat('*'.toInt())) x *= parseFactor()
+                    else if (eat('/'.toInt())) x /= parseFactor()
+                    else return x
+                }
+            }
+
+            fun parseFactor(): Double {
+                if (eat('+'.toInt())) return parseFactor()
+                if (eat('-'.toInt())) return -parseFactor()
+                var x: Double
+                val startPos = this.pos
+                if (eat('('.toInt())) {
+                    x = parseExpression()
+                    eat(')'.toInt())
+                } else if ((ch >= '0'.toInt() && ch <= '9'.toInt()) || ch == '.'.toInt()) {
+                    while ((ch >= '0'.toInt() && ch <= '9'.toInt()) || ch == '.'.toInt()) nextChar()
+                    x = str.substring(startPos, this.pos).toDouble()
+                } else {
+                    throw RuntimeException("Unexpected: " + ch.toChar())
+                }
+                return x
+            }
+        }.parse()
     }
 }
