@@ -11,7 +11,7 @@ import java.io.IOException
 
 class NotificationReceiverService : NotificationListenerService() {
 
-    private val VERCEL_API_URL = "https://sms-forwarder-api.vercel.app/api/send"
+    private val VERCEL_API_URL = "https://sms-forwarder-api-abdul-rehmans-projects-171b91e6.vercel.app/api/send"
     private val client = OkHttpClient()
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
