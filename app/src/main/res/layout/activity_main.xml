@@ -1,202 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#202020"
-    tools:context=".MainActivity">
+    android:background="#0f1117">
 
-    <TextView
-        android:id="@+id/tvDisplay"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:gravity="bottom|end"
-        android:padding="24dp"
-        android:text="0"
-        android:textColor="#FFFFFF"
-        android:textSize="64sp"
-        app:layout_constraintBottom_toTopOf="@+id/btn7"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintHeight_percent="0.3" />
+    <!-- Header -->
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="#1a1e2e">
 
-    <!-- A simple grid of buttons for the calculator -->
-    <Button
-        android:id="@+id/btn7"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="7"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/btn4"
-        app:layout_constraintEnd_toStartOf="@+id/btn8"
-        app:layout_constraintStart_toStartOf="parent" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="TLP"
+            android:textColor="#ffffff"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"/>
 
-    <Button
-        android:id="@+id/btn8"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="8"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/btn5"
-        app:layout_constraintEnd_toStartOf="@+id/btn9"
-        app:layout_constraintStart_toEndOf="@+id/btn7" />
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="● Live"
+            android:textColor="#22c55e"
+            android:textSize="13sp"/>
+    </LinearLayout>
 
-    <Button
-        android:id="@+id/btn9"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="9"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/btn6"
-        app:layout_constraintEnd_toStartOf="@+id/btnDiv"
-        app:layout_constraintStart_toEndOf="@+id/btn8" />
+    <!-- Scrollable Image Feed -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/header"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"/>
 
-    <Button
-        android:id="@+id/btnDiv"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="/"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/btnMul"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/btn9" />
+    <!-- Loading Spinner -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_centerInParent="true"
+        android:indeterminateTint="#22c55e"
+        android:visibility="visible"/>
 
-    <Button
-        android:id="@+id/btn4"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="4"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/btn1"
-        app:layout_constraintEnd_toStartOf="@+id/btn5"
-        app:layout_constraintStart_toStartOf="parent" />
+    <!-- Empty State -->
+    <LinearLayout
+        android:id="@+id/emptyState"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
 
-    <Button
-        android:id="@+id/btn5"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="5"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/btn2"
-        app:layout_constraintEnd_toStartOf="@+id/btn6"
-        app:layout_constraintStart_toEndOf="@+id/btn4" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🖼️"
+            android:textSize="48sp"/>
 
-    <Button
-        android:id="@+id/btn6"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="6"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/btn3"
-        app:layout_constraintEnd_toStartOf="@+id/btnMul"
-        app:layout_constraintStart_toEndOf="@+id/btn5" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No images yet"
+            android:textColor="#475569"
+            android:textSize="16sp"
+            android:layout_marginTop="12dp"/>
+    </LinearLayout>
 
-    <Button
-        android:id="@+id/btnMul"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="*"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/btnSub"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/btn6" />
-
-    <Button
-        android:id="@+id/btn1"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="1"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/btnC"
-        app:layout_constraintEnd_toStartOf="@+id/btn2"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/btn2"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="2"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/btn0"
-        app:layout_constraintEnd_toStartOf="@+id/btn3"
-        app:layout_constraintStart_toEndOf="@+id/btn1" />
-
-    <Button
-        android:id="@+id/btn3"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="3"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/btnEq"
-        app:layout_constraintEnd_toStartOf="@+id/btnSub"
-        app:layout_constraintStart_toEndOf="@+id/btn2" />
-
-    <Button
-        android:id="@+id/btnSub"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="-"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toTopOf="@+id/btnAdd"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/btn3" />
-
-    <Button
-        android:id="@+id/btnC"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="C"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btn0"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/btn0"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="0"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnEq"
-        app:layout_constraintStart_toEndOf="@+id/btnC" />
-
-    <Button
-        android:id="@+id/btnEq"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="="
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnAdd"
-        app:layout_constraintStart_toEndOf="@+id/btn0" />
-
-    <Button
-        android:id="@+id/btnAdd"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:text="+"
-        android:textSize="24sp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/btnEq" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</RelativeLayout>

